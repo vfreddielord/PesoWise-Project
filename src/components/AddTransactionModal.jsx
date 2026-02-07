@@ -1,57 +1,32 @@
 import React from 'react';
 
-export default function AddTransactionModal({ onAdd, onClose, label, setLabel, amount, setAmount, category, setCategory, isIncome }) {
+export default function AddTransactionModal({ onAdd, onClose, label, setLabel, amount, setAmount, category, setCategory, isIncome, setIsIncome }) {
   const categories = ["🏠 Home", "🍔 Food", "⚡ Utility", "🛡️ Savings", "🚗 Transpo"];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm">
-      <div className="bg-white p-8 w-full max-w-sm rounded-[40px] shadow-2xl animate-in zoom-in duration-200">
-        
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+      <div className="bg-white p-8 w-full max-w-sm rounded-[40px] shadow-2xl animate-in slide-in-from-bottom-10 duration-300">
         <div className="flex justify-between items-center mb-6">
-           <h3 className={`font-black text-xl ${isIncome ? 'text-emerald-600' : 'text-rose-600'}`}>
-             {isIncome ? '💰 New Cash In' : '💸 New Cash Out'}
-           </h3>
-           <button onClick={onClose} className="text-slate-300 hover:text-slate-500 font-black text-xl">✕</button>
+           <h3 className="font-black text-xl text-slate-800">New Record</h3>
+           <button onClick={onClose} className="btn btn-ghost btn-circle btn-sm">✕</button>
+        </div>
+
+        {/* 🛠️ THE TWEAK: Manual Toggle Switch */}
+        <div className="flex bg-slate-100 p-1 rounded-2xl mb-6">
+          <button type="button" onClick={() => setIsIncome(false)} className={`flex-1 py-2 rounded-xl font-black text-[10px] transition-all ${!isIncome ? 'bg-white shadow-sm text-rose-500' : 'text-slate-400'}`}>EXPENSE</button>
+          <button type="button" onClick={() => setIsIncome(true)} className={`flex-1 py-2 rounded-xl font-black text-[10px] transition-all ${isIncome ? 'bg-white shadow-sm text-emerald-500' : 'text-slate-400'}`}>INCOME</button>
         </div>
         
         <form onSubmit={onAdd} className="space-y-4">
-          {/* Category Select */}
-          <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase ml-2 mb-1">Category</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl border-none font-bold text-sm outline-none">
-              {categories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className="select select-bordered w-full rounded-2xl font-bold bg-slate-50 border-none">
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
           
-          {/* Description Input */}
-          <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase ml-2 mb-1">Description</label>
-            <input 
-              type="text" 
-              placeholder="What is this for?" 
-              value={label} 
-              onChange={(e) => setLabel(e.target.value)} 
-              className="w-full bg-slate-50 p-4 rounded-2xl outline-none font-bold text-slate-600 border border-transparent focus:border-blue-200" 
-            />
-          </div>
+          <input type="text" placeholder="Description" value={label} onChange={(e) => setLabel(e.target.value)} className="input w-full bg-slate-50 rounded-2xl font-bold border-none" />
           
-          {/* Amount Input */}
-          <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase ml-2 mb-1">Amount (PHP)</label>
-            <input 
-              type="number" 
-              placeholder="0.00" 
-              value={amount} 
-              onChange={(e) => setAmount(e.target.value)} 
-              className="w-full bg-slate-100 p-4 rounded-2xl text-2xl font-black text-slate-800 text-center outline-none border-2 border-transparent focus:border-blue-500" 
-            />
-          </div>
+          <input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="input w-full bg-slate-100 rounded-2xl text-2xl font-black text-center border-none py-8" />
           
-          {/* Submit Button */}
-          <button 
-            type="submit" 
-            className={`w-full p-5 rounded-3xl font-black shadow-xl transition-all mt-4 text-white ${isIncome ? 'bg-emerald-500 shadow-emerald-100 hover:bg-emerald-600' : 'bg-rose-500 shadow-rose-100 hover:bg-rose-600'}`}
-          >
+          <button type="submit" className={`w-full p-5 rounded-3xl font-black text-white shadow-xl transition-all ${isIncome ? 'bg-emerald-500 shadow-emerald-100' : 'bg-rose-500 shadow-rose-100'}`}>
             CONFIRM {isIncome ? 'INCOME' : 'EXPENSE'}
           </button>
         </form>
