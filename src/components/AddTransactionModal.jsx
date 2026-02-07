@@ -1,33 +1,76 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 
-export default function AddTransactionModal({ onAdd, onClose, label, setLabel, amount, setAmount, category, setCategory, isIncome, setIsIncome }) {
-  const categories = ["🏠 Home", "🍔 Food", "⚡ Utility", "🛡️ Savings", "🚗 Transpo"];
+export default function AddTransactionModal({ onAdd, onClose, session, profCategories }) {
+  const [amount, setAmount] = useState('');
+  const [label, setLabel] = useState('');
+  const [isIncome, setIsIncome] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  const quickAmounts = [50, 100, 500, 1000];
+  const filteredCategories = profCategories.filter(cat => cat.type === 'both' || (isIncome ? cat.type === 'income' : cat.type === 'expense'));
+  const [category, setCategory] = useState(filteredCategories[0]?.emoji);
+
+  useEffect(() => { setCategory(filteredCategories[0]?.emoji); }, [isIncome]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!amount || !label) return;
+    setLoading(true);
+    const { error } = await supabase.from('transactions').insert([{
+      user_id: session.user.id,
+      amount: parseFloat(amount),
+      note: `${category} ${label}`,
+      type: isIncome ? 'income' : 'expense',
+    }]);
+    if (!error) { onAdd(); onClose(); }
+    setLoading(false);
+  };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-      <div className="bg-white p-8 w-full max-w-sm rounded-[40px] shadow-2xl animate-in slide-in-from-bottom-10 duration-300">
-        <div className="flex justify-between items-center mb-6">
-           <h3 className="font-black text-xl text-slate-800">New Record</h3>
-           <button onClick={onClose} className="btn btn-ghost btn-circle btn-sm">✕</button>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-slate-900 w-full max-w-md rounded-[40px] border border-slate-800 p-8 animate-in slide-in-from-bottom duration-300" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-4 mb-8">
+          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-slate-800 rounded-full text-slate-400 hover:text-white transition-all">←</button>
+          <h2 className="text-2xl font-black italic tracking-tight text-white">New Record</h2>
         </div>
 
-        {/* 🛠️ THE TWEAK: Manual Toggle Switch */}
-        <div className="flex bg-slate-100 p-1 rounded-2xl mb-6">
-          <button type="button" onClick={() => setIsIncome(false)} className={`flex-1 py-2 rounded-xl font-black text-[10px] transition-all ${!isIncome ? 'bg-white shadow-sm text-rose-500' : 'text-slate-400'}`}>EXPENSE</button>
-          <button type="button" onClick={() => setIsIncome(true)} className={`flex-1 py-2 rounded-xl font-black text-[10px] transition-all ${isIncome ? 'bg-white shadow-sm text-emerald-500' : 'text-slate-400'}`}>INCOME</button>
-        </div>
-        
-        <form onSubmit={onAdd} className="space-y-4">
-          <select value={category} onChange={(e) => setCategory(e.target.value)} className="select select-bordered w-full rounded-2xl font-bold bg-slate-50 border-none">
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          
-          <input type="text" placeholder="Description" value={label} onChange={(e) => setLabel(e.target.value)} className="input w-full bg-slate-50 rounded-2xl font-bold border-none" />
-          
-          <input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="input w-full bg-slate-100 rounded-2xl text-2xl font-black text-center border-none py-8" />
-          
-          <button type="submit" className={`w-full p-5 rounded-3xl font-black text-white shadow-xl transition-all ${isIncome ? 'bg-emerald-500 shadow-emerald-100' : 'bg-rose-500 shadow-rose-100'}`}>
-            CONFIRM {isIncome ? 'INCOME' : 'EXPENSE'}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-slate-800/50 p-1.5 rounded-2xl flex gap-2">
+            <button type="button" onClick={() => setIsIncome(false)} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${!isIncome ? 'bg-rose-500 text-white shadow-lg' : 'text-slate-500'}`}>Expense</button>
+            <button type="button" onClick={() => setIsIncome(true)} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${isIncome ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500'}`}>Income</button>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2">Quick Select</label>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {quickAmounts.map(amt => (
+                <button key={amt} type="button" onClick={() => setAmount(amt.toString())} className="bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-[10px] font-black text-blue-400 hover:bg-blue-500/10 active:scale-95 transition-all flex-shrink-0">
+                  +₱{amt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2">Amount</label>
+            <input type="number" required placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full bg-slate-800 border border-slate-700 p-6 rounded-3xl text-3xl font-black text-center text-white outline-none focus:border-blue-500 transition-colors" />
+          </div>
+
+          <div className="space-y-2">
+             <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2">Category</label>
+             <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-slate-800 border border-slate-700 p-4 rounded-2xl text-white font-bold outline-none">
+                {filteredCategories.map(cat => <option key={cat.label} value={cat.emoji}>{cat.icon} {cat.label}</option>)}
+             </select>
+          </div>
+
+          <div className="space-y-2">
+             <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2">Description</label>
+             <input type="text" required placeholder="What was this for?" value={label} onChange={(e) => setLabel(e.target.value)} className="w-full bg-slate-800 border border-slate-700 p-4 rounded-2xl text-white outline-none font-bold" />
+          </div>
+
+          <button disabled={loading} type="submit" className={`w-full p-5 rounded-3xl text-sm font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 ${isIncome ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+            {loading ? 'Processing...' : `Confirm ${isIncome ? 'Income' : 'Expense'}`}
           </button>
         </form>
       </div>
